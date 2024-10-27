@@ -25,9 +25,10 @@ class TodoView extends StatefulWidget {
 class _TodoViewState extends State<TodoView> {
   final _todos = <TodoModel>[];
   final _controller = TextEditingController();
-
+  final _headers = {'Content-Type': 'application/json'};
   final apiUrl = '${getBackendUrl()}/api/v1/todos';
-  _fetchTodos() async {
+  //lay ds todo
+  Future<void> _fetchTodos() async {
     final res = await http.get(Uri.parse(apiUrl));
     if (res.statusCode == 200) {
       final List<dynamic> todoList = json.decode(res.body);
@@ -36,6 +37,38 @@ class _TodoViewState extends State<TodoView> {
         _todos.addAll(todoList.map((e) => TodoModel.fromJson(e)).toList());
       });
     }
+  }
+
+  //them 1 todo
+  Future<void> _addTodos() async {
+    if (_controller.text.isEmpty) return;
+    final newItem = TodoModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: _controller.text,
+        completed: false);
+    final res = await http.post(Uri.parse(apiUrl),
+        headers: _headers, body: json.encode(newItem.toMap()));
+    if (res.statusCode == 200) {
+      _controller.clear();
+      _fetchTodos(); //lam moi ds
+    }
+  }
+
+  //cap nhat trang thai complete
+  Future<void> _updateTodo(TodoModel item) async {
+    item.completed = !item.completed; //thay doi trang thai true,false
+    final res = await http.put(Uri.parse(apiUrl),
+        headers: _headers, body: json.encode(item.toMap()));
+    if (res.statusCode == 200) {
+      _fetchTodos();
+    }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _fetchTodos();
   }
 
   @override
