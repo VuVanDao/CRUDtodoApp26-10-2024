@@ -20,6 +20,8 @@ class TodoRouter {
     router.post('/todos', _AddTodohandler);
     //D
     router.delete('/todos/<id>', _DeleteTodohandler);
+    //U
+    router.put('/todos/<id>', _UpdateTodohandler);
 
     return router;
   }
@@ -68,6 +70,25 @@ class TodoRouter {
       }
       final removedTodo = _todos.removeAt(index);
       return Response.ok(removedTodo.toJson(), headers: _headers);
+    } catch (e) {
+      return Response.internalServerError(
+          body: json.encode({'error': e.toString()}), headers: _headers);
+    }
+  }
+
+  //U
+  Future<Response> _UpdateTodohandler(Request req, String id) async {
+    try {
+      final index = _todos.indexWhere((todo) => todo.id == int.parse(id));
+      if (index == -1) {
+        return Response.notFound('not found ${id}', headers: _headers);
+      }
+      final payload = await req.readAsString();
+      final data = json.decode(
+          payload); // json.decode để chuyển đổi chuỗi JSON payload thành một đối tượng Dart (Map hoặc List).\
+      final updateTodo = TodoModel.fromMap(data);
+      _todos[index] = updateTodo;
+      return Response.ok(updateTodo.toJson(), headers: _headers);
     } catch (e) {
       return Response.internalServerError(
           body: json.encode({'error': e.toString()}), headers: _headers);
