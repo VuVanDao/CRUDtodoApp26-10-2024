@@ -18,6 +18,8 @@ class TodoRouter {
     router.get('/todos', _getTodohandler);
     //C
     router.post('/todos', _AddTodohandler);
+    //D
+    router.delete('/todos/<id>', _DeleteTodohandler);
 
     return router;
   }
@@ -51,6 +53,21 @@ class TodoRouter {
           data); // Phương thức tạo ra một đối tượng TodoModel từ một Map (tập hợp các cặp key-value).
       _todos.add(todo);
       return Response.ok(todo.toJson(), headers: _headers);
+    } catch (e) {
+      return Response.internalServerError(
+          body: json.encode({'error': e.toString()}), headers: _headers);
+    }
+  }
+
+  //D
+  Future<Response> _DeleteTodohandler(Request req, String id) async {
+    try {
+      final index = _todos.indexWhere((todo) => todo.id == int.parse(id));
+      if (index == -1) {
+        return Response.notFound('not found ${id}', headers: _headers);
+      }
+      final removedTodo = _todos.removeAt(index);
+      return Response.ok(removedTodo.toJson(), headers: _headers);
     } catch (e) {
       return Response.internalServerError(
           body: json.encode({'error': e.toString()}), headers: _headers);
