@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,7 @@ class _TodoViewState extends State<TodoView> {
       final List<dynamic> todoList = json.decode(res.body);
       setState(() {
         _todos.clear();
-        _todos.addAll(todoList.map((e) => TodoModel.fromJson(e)).toList());
+        _todos.addAll(todoList.map((e) => TodoModel.fromMap(e)).toList());
       });
     }
   }
@@ -57,8 +58,18 @@ class _TodoViewState extends State<TodoView> {
   //cap nhat trang thai complete
   Future<void> _updateTodo(TodoModel item) async {
     item.completed = !item.completed; //thay doi trang thai true,false
-    final res = await http.put(Uri.parse(apiUrl),
+    final res = await http.put(Uri.parse('$apiUrl/${item.id}'),
         headers: _headers, body: json.encode(item.toMap()));
+    if (res.statusCode == 200) {
+      _fetchTodos();
+    }
+  }
+
+  //xoa todo
+  Future<void> _deleteTodo(int id) async {
+    final res = await http.delete(
+      Uri.parse('$apiUrl/$id'),
+    );
     if (res.statusCode == 200) {
       _fetchTodos();
     }
@@ -66,13 +77,61 @@ class _TodoViewState extends State<TodoView> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _fetchTodos();
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text("Todo App"),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(5),
+          child: Column(
+            children: [
+              //add todo
+              Row(
+                children: [
+                  Expanded(
+                      child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(labelText: "Todo moi"),
+                  )),
+                  IconButton(onPressed: _addTodos, icon: const Icon(Icons.add))
+                ],
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              Expanded(
+                  //ds todo
+                  child: ListView.builder(
+                      itemCount: _todos.length,
+                      itemBuilder: (context, index) {
+                        final item = _todos.elementAt(index);
+                        return ListTile(
+                          title: Text(item.title),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                  value: item.completed,
+                                  onChanged: (value) {
+                                    _updateTodo(item);
+                                  }),
+                              IconButton(
+                                  onPressed: () {
+                                    _deleteTodo(item.id);
+                                  },
+                                  icon: const Icon(Icons.remove))
+                            ],
+                          ),
+                        );
+                      }))
+            ],
+          ),
+        ));
   }
 }
